@@ -29,12 +29,19 @@ jobs:
         pip install -r requirements.txt
         pip install huggingface_hub
 
+    # install hugging face cli
+    - name: install huggingface cli
+      run: |
+        pip install hf-cli
+        pip install huggingface_hub
+
     # login to hugging face
     - name: huggingface login
       env:
         HF_TOKEN: ${{ secrets.HF_TOKEN }}
       run: |
-        echo $HF_TOKEN | huggingface-cli login --token $HF_TOKEN --add-to-git-credential
+        echo "$HF_TOKEN" | hf-cli login --token "$HF_TOKEN" --add-to-git-credential
+
 
     # create folder structure if missing
     - name: create ml folders
