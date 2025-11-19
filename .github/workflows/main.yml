@@ -2,35 +2,68 @@ name: mlops-pipeline
 
 on:
   push:
-    branches: [ "main" ]
+    branches:
+      - main
   workflow_dispatch:
 
 jobs:
-  build:
+  mlops:
     runs-on: ubuntu-latest
 
     steps:
+
+    # checkout code
     - name: checkout repository
       uses: actions/checkout@v3
 
+    # set up python
     - name: set up python
       uses: actions/setup-python@v4
       with:
-        python-version: 3.10
+        python-version: "3.10"
 
+    # install python dependencies
     - name: install dependencies
       run: |
+        python -m pip install --upgrade pip
         pip install -r requirements.txt
         pip install huggingface_hub
 
-    - name: login to huggingface
+    # login to hugging face
+    - name: huggingface login
       env:
         HF_TOKEN: ${{ secrets.HF_TOKEN }}
       run: |
-        huggingface-cli login --token $HF_TOKEN
+        echo $HF_TOKEN | huggingface-cli login --token $HF_TOKEN --add-to-git-credential
 
-    - name: run pipeline
-      env:
-        HF_TOKEN: ${{ secrets.HF_TOKEN }}
+    # create folder structure if missing
+    - name: create ml folders
       run: |
-        python pipeline.py
+        mkdir -p data
+        mkdir -p outputs
+        mkdir -p models
+
+    # run data preparation
+    - name: run data pipeline
+      run: |
+        python scripts/data_pipeline.py
+
+    # model training
+    - name: run model training
+      run: |
+        python scripts/model_training.py
+
+    # upload the model to hugging face
+    - name: upload best model to huggingface
+      run: |
+        python scripts/model_upload.py
+
+    # commit and push output changes
+    - name: push updates to repository
+      run: |
+        git config --local user.email "actions@github.com"
+        git config --local user.name "github-actions"
+
+        git add .
+        git commit -m "automated pipeline update" || echo "nothing to commit"
+        git push origin main
