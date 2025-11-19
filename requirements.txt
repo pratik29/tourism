@@ -1,0 +1,9 @@
+python-dotenv
+pandas
+numpy
+scikit-learn
+joblib
+datasets
+huggingface_hub
+xgboost
+gradio
